@@ -186,7 +186,7 @@
 <!-- Dashboard -->
 <div id="dashboard">
   <header>
-    <h1>Welcome t UCU Mukono Biogas Monitor</h1>
+    <h1>Welcome to UCU Mukono Biogas Monitor</h1>
     <img src="https://codebitstechnologies.com/static/media/logo.241ddd6b.png" />
     <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/5d/Uganda_Christian_University_logo.jpg/320px-Uganda_Christian_University_logo.jpg" alt="UCU Logo" />
   </header>
@@ -243,8 +243,8 @@
   function handleLogin() {
     const usernameInput = document.getElementById('username').value.trim();
     const passwordInput = document.getElementById('password').value;
-    const validUsername = 'Admin';
-    const validPassword = 'jeep12';
+    const validUsername = 'UCU mukono';
+    const validPassword = 'biogasmonitor12';
 
     if (usernameInput === validUsername && passwordInput === validPassword) {
       document.getElementById('loginContainer').style.display = 'none';
@@ -275,7 +275,6 @@
     try {
       const resp = await fetch(url);
       if (!resp.ok) throw new Error('Network response was not ok');
-
       const data = await resp.json();
 
       const tbody = document.querySelector('#dataTable tbody');
@@ -322,7 +321,7 @@
       });
 
       drawAnimatedLineChart(dates, co2s, ch4s, hums, temps, phs);
-      drawAnimatedPieChart(co2s, ch4s, hums, temps, phs);
+      drawAnimatedPieChart(co2s, ch4s, hums); // ✅ Only these 3 now
       updateLastEntryInfo(latestEntryTime);
 
     } catch (err) {
@@ -331,23 +330,6 @@
   }
 
   function drawAnimatedLineChart(x, co2, ch4, hum, temp, ph) {
-    const createTrace = (y, name) => ({
-      x,
-      y: Array(y.length).fill(null), // Start with empty line
-      mode: 'lines+markers',
-      name,
-      type: 'scatter',
-      line: { shape: 'linear' }
-    });
-
-    const traces = [
-      createTrace(co2, 'CO₂ (%)'),
-      createTrace(ch4, 'CH₄ (%)'),
-      createTrace(hum, 'Humidity (%)'),
-      createTrace(temp, 'Temperature (°C)'),
-      createTrace(ph, 'pH'),
-    ];
-
     const layout = {
       title: 'Biogas Sensor Data Over Time',
       legend: { orientation: "h", x: 0, y: -0.3 },
@@ -356,8 +338,15 @@
       height: 450
     };
 
-    Plotly.newPlot('chart', traces, layout, { responsive: true }).then(() => {
-      // Animate data point by point
+    const initialTraces = [
+      { x: [], y: [], mode: 'lines+markers', name: 'CO₂ (%)', type: 'scatter', line: { shape: 'linear' } },
+      { x: [], y: [], mode: 'lines+markers', name: 'CH₄ (%)', type: 'scatter', line: { shape: 'linear' } },
+      { x: [], y: [], mode: 'lines+markers', name: 'Humidity (%)', type: 'scatter', line: { shape: 'linear' } },
+      { x: [], y: [], mode: 'lines+markers', name: 'Temperature (°C)', type: 'scatter', line: { shape: 'linear' } },
+      { x: [], y: [], mode: 'lines+markers', name: 'pH', type: 'scatter', line: { shape: 'linear' } },
+    ];
+
+    Plotly.newPlot('chart', initialTraces, layout, { responsive: true }).then(() => {
       let i = 0;
       const interval = setInterval(() => {
         if (i >= x.length) {
@@ -365,44 +354,38 @@
           return;
         }
 
-        traces.forEach((trace, t) => {
-          trace.y[i] = [co2, ch4, hum, temp, ph][t][i];
-        });
+        const updatedTraces = [
+          { x: x.slice(0, i + 1), y: co2.slice(0, i + 1), mode: 'lines+markers', name: 'CO₂ (%)', type: 'scatter', line: { shape: 'linear' } },
+          { x: x.slice(0, i + 1), y: ch4.slice(0, i + 1), mode: 'lines+markers', name: 'CH₄ (%)', type: 'scatter', line: { shape: 'linear' } },
+          { x: x.slice(0, i + 1), y: hum.slice(0, i + 1), mode: 'lines+markers', name: 'Humidity (%)', type: 'scatter', line: { shape: 'linear' } },
+          { x: x.slice(0, i + 1), y: temp.slice(0, i + 1), mode: 'lines+markers', name: 'Temperature (°C)', type: 'scatter', line: { shape: 'linear' } },
+          { x: x.slice(0, i + 1), y: ph.slice(0, i + 1), mode: 'lines+markers', name: 'pH', type: 'scatter', line: { shape: 'linear' } },
+        ];
 
-        Plotly.animate('chart', {
-          data: traces
-        }, {
-          transition: { duration: 0 },
-          frame: { duration: 20, redraw: true }
-        });
-
+        Plotly.react('chart', updatedTraces, layout);
         i++;
       }, 15);
     });
   }
 
-  function drawAnimatedPieChart(co2s, ch4s, hums, temps, phs) {
+  function drawAnimatedPieChart(co2s, ch4s, hums) {
     const avg = arr => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
 
     const avgCo2 = avg(co2s);
     const avgCh4 = avg(ch4s);
     const avgHum = avg(hums);
-    const avgTemp = avg(temps);
-    const avgPh = avg(phs);
 
-    const total = avgCo2 + avgCh4 + avgHum + avgTemp + avgPh;
+    const total = avgCo2 + avgCh4 + avgHum;
 
     const finalValues = [
       (avgCo2 / total) * 100,
       (avgCh4 / total) * 100,
-      (avgHum / total) * 100,
-      (avgTemp / total) * 100,
-      (avgPh / total) * 100
+      (avgHum / total) * 100
     ];
 
     const data = [{
-      values: [0, 0, 0, 0, 0], // Start with empty values
-      labels: ['CO₂ (%)', 'CH₄ (%)', 'Humidity (%)', 'Temperature (°C)', 'pH'],
+      values: [0, 0, 0],
+      labels: ['CO₂ (%)', 'CH₄ (%)', 'Humidity (%)'],
       type: 'pie',
       rotation: 0
     }];
@@ -413,7 +396,7 @@
     };
 
     Plotly.newPlot('pieChart', data, layout, { responsive: true }).then(() => {
-      let currentValues = [0, 0, 0, 0, 0];
+      let currentValues = [0, 0, 0];
       let step = 1;
       const interval = setInterval(() => {
         let complete = true;
