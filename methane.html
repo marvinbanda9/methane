@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UCU Biogas Dashboard - Login</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    header img {
+      max-height: 80px;
+      margin-top: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    #loginContainer {
+      max-width: 400px;
+      margin: 100px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    #loginContainer h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #loginError {
+      color: red;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 10px 5px 0 0;
+      cursor: pointer;
+      border: none;
+      background-color: #0055a5;
+      color: white;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #004080;
+    }
+
+    #dashboard {
+      display: none;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    #chart {
+      width: 100%;
+      height: 450px;
+      margin-bottom: 20px;
+    }
+
+    .table-wrapper {
+      max-height: 400px;
+      overflow-y: auto;
+      overflow-x: auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background-color: #f7f7f7;
+      z-index: 1;
+      font-weight: bold;
+      border-bottom: 2px solid #ccc;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    .button-group button.logout {
+      background-color: #d9534f;
+    }
+
+    .button-group button.logout:hover {
+      background-color: #c9302c;
+    }
+
+    #lastUpdateInfo {
+      font-size: 14px;
+      color: #333;
+      margin-top: 10px;
+      text-align: right;
+    }
+
+    @media screen and (max-width: 768px) {
+      .button-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      table {
+        font-size: 14px;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+
+      #chart {
+        height: 300px;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Form -->
+  <div id="loginContainer">
+    <h2>Login to Biogas Dashboard</h2>
+    <div id="loginError"></div>
+    <label for="username">Username</label>
+    <input type="text" id="username" autocomplete="username" placeholder="Enter username" />
+    <label for="password">Password</label>
+    <input type="password" id="password" autocomplete="current-password" placeholder="Enter password" />
+    <button onclick="handleLogin()">Login</button>
+  </div>
+<!-- Dashboard -->
+<div id="dashboard">
+  <header>
+    <h1>Welcome to UCU Mukono Biogas Monitor</h1>
+    <img src="https://codebitstechnologies.com/static/media/logo.241ddd6b.png" />
+    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/5d/Uganda_Christian_University_logo.jpg/320px-Uganda_Christian_University_logo.jpg" alt="UCU Logo" />
+  </header>
+
+  <div class="controls">
+    <label for="timeRange">Select Time Range:</label>
+    <select id="timeRange" onchange="onTimeRangeChange()">
+      <option value="25">Past Hour (~25 points)</option>
+      <option value="100">Past Day (~100 points)</option>
+      <option value="300">Past 3 Days (~300 points)</option>
+      <option value="1000">Past Week (~1000 points)</option>
+    </select>
+  </div>
+
+  <!-- Line and Pie chart side by side -->
+  <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+    <div id="chart" style="flex: 1 1 60%;"></div>
+    <div id="pieChart" style="flex: 1 1 35%;"></div>
+  </div>
+
+  <div class="button-group">
+    <div>
+      <button onclick="fetchData()">Refresh Data</button>
+      <button onclick="exportToCSV()">Export Data</button>
+    </div>
+    <button onclick="handleLogout()" class="logout">Logout</button>
+  </div>
+
+  <div id="lastUpdateInfo">Last updated: --</div>
+
+  <div class="table-wrapper">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>CO₂ (%)</th>
+          <th>CH₄ (%)</th>
+          <th>Humidity (%)</th>
+          <th>Temp (°C)</th>
+          <th>pH</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+  const apiKey = '2TV4GZY5ESANU5SS';
+  const channelId = '3033421';
+  let feedCount = 25;
+
+  function handleLogin() {
+    const usernameInput = document.getElementById('username').value.trim();
+    const passwordInput = document.getElementById('password').value;
+    const validUsername = 'Admin';
+    const validPassword = 'jeep12';
+
+    if (usernameInput === validUsername && passwordInput === validPassword) {
+      document.getElementById('loginContainer').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      fetchData();
+    } else {
+      document.getElementById('loginError').textContent = 'Invalid username or password.';
+    }
+  }
+
+  function handleLogout() {
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('loginError').textContent = '';
+  }
+
+  function onTimeRangeChange() {
+    const selected = document.getElementById('timeRange').value;
+    feedCount = parseInt(selected, 10);
+    fetchData();
+  }
+
+  async function fetchData() {
+    const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${apiKey}&results=${feedCount}`;
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('Network response was not ok');
+
+      const data = await resp.json();
+
+      const tbody = document.querySelector('#dataTable tbody');
+      tbody.innerHTML = '';
+
+      const dates = [], co2s = [], ch4s = [], hums = [], temps = [], phs = [];
+
+      let latestEntryTime = null;
+
+      data.feeds.forEach((entry, index) => {
+        if (!entry.created_at) return;
+
+        const dt = new Date(entry.created_at);
+        if (index === data.feeds.length - 1) latestEntryTime = dt;
+
+        const date = dt.toISOString().split('T')[0];
+        const time = dt.toTimeString().split(' ')[0];
+
+        const co2 = parseFloat(entry.field2) || 0;
+        const ch4 = parseFloat(entry.field1) || 0;
+        const humidity = parseFloat(entry.field4) || 0;
+        const temp = parseFloat(entry.field3) || 0;
+        const ph = parseFloat(entry.field5) || 0;
+
+        const row = `
+          <tr>
+            <td>${date}</td>
+            <td>${time}</td>
+            <td>${co2}</td>
+            <td>${ch4}</td>
+            <td>${humidity}</td>
+            <td>${temp}</td>
+            <td>${ph}</td>
+          </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+
+        const label = `${date} ${time}`;
+        dates.push(label);
+        co2s.push(co2);
+        ch4s.push(ch4);
+        hums.push(humidity);
+        temps.push(temp);
+        phs.push(ph);
+      });
+
+      drawAnimatedLineChart(dates, co2s, ch4s, hums, temps, phs);
+      drawAnimatedPieChart(co2s, ch4s, hums, temps, phs);
+      updateLastEntryInfo(latestEntryTime);
+
+    } catch (err) {
+      console.error('Fetch error:', err);
+    }
+  }
+
+  function drawAnimatedLineChart(x, co2, ch4, hum, temp, ph) {
+    const createTrace = (y, name) => ({
+      x,
+      y: Array(y.length).fill(null), // Start with empty line
+      mode: 'lines+markers',
+      name,
+      type: 'scatter',
+      line: { shape: 'linear' }
+    });
+
+    const traces = [
+      createTrace(co2, 'CO₂ (%)'),
+      createTrace(ch4, 'CH₄ (%)'),
+      createTrace(hum, 'Humidity (%)'),
+      createTrace(temp, 'Temperature (°C)'),
+      createTrace(ph, 'pH'),
+    ];
+
+    const layout = {
+      title: 'Biogas Sensor Data Over Time',
+      legend: { orientation: "h", x: 0, y: -0.3 },
+      margin: { t: 50, b: 100 },
+      xaxis: { tickangle: -45 },
+      height: 450
+    };
+
+    Plotly.newPlot('chart', traces, layout, { responsive: true }).then(() => {
+      // Animate data point by point
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= x.length) {
+          clearInterval(interval);
+          return;
+        }
+
+        traces.forEach((trace, t) => {
+          trace.y[i] = [co2, ch4, hum, temp, ph][t][i];
+        });
+
+        Plotly.animate('chart', {
+          data: traces
+        }, {
+          transition: { duration: 0 },
+          frame: { duration: 20, redraw: true }
+        });
+
+        i++;
+      }, 15);
+    });
+  }
+
+  function drawAnimatedPieChart(co2s, ch4s, hums, temps, phs) {
+    const avg = arr => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+
+    const avgCo2 = avg(co2s);
+    const avgCh4 = avg(ch4s);
+    const avgHum = avg(hums);
+    const avgTemp = avg(temps);
+    const avgPh = avg(phs);
+
+    const total = avgCo2 + avgCh4 + avgHum + avgTemp + avgPh;
+
+    const finalValues = [
+      (avgCo2 / total) * 100,
+      (avgCh4 / total) * 100,
+      (avgHum / total) * 100,
+      (avgTemp / total) * 100,
+      (avgPh / total) * 100
+    ];
+
+    const data = [{
+      values: [0, 0, 0, 0, 0], // Start with empty values
+      labels: ['CO₂ (%)', 'CH₄ (%)', 'Humidity (%)', 'Temperature (°C)', 'pH'],
+      type: 'pie',
+      rotation: 0
+    }];
+
+    const layout = {
+      title: `Average Composition (Last ${feedCount} Points)`,
+      height: 450
+    };
+
+    Plotly.newPlot('pieChart', data, layout, { responsive: true }).then(() => {
+      let currentValues = [0, 0, 0, 0, 0];
+      let step = 1;
+      const interval = setInterval(() => {
+        let complete = true;
+        for (let i = 0; i < finalValues.length; i++) {
+          if (currentValues[i] < finalValues[i]) {
+            currentValues[i] += step;
+            if (currentValues[i] > finalValues[i]) currentValues[i] = finalValues[i];
+            complete = false;
+          }
+        }
+
+        Plotly.animate('pieChart', {
+          data: [{ values: currentValues }]
+        }, {
+          transition: { duration: 0 },
+          frame: { duration: 30, redraw: true }
+        });
+
+        if (complete) clearInterval(interval);
+      }, 30);
+    });
+  }
+
+  function updateLastEntryInfo(entryTime) {
+    const info = document.getElementById('lastUpdateInfo');
+    if (!entryTime) {
+      info.textContent = "Last updated: Unknown";
+      return;
+    }
+    const now = new Date();
+    const minutesAgo = Math.floor((now - entryTime) / 60000);
+    info.textContent = `Last entry: ${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''} ago`;
+  }
+
+  function exportToCSV() {
+    const table = document.getElementById("dataTable");
+    let csv = "";
+    for (let row of table.rows) {
+      let cells = Array.from(row.cells).map(cell => `"${cell.innerText}"`);
+      csv += cells.join(",") + "\n";
+    }
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ucu_biogas_data.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+</script>
