@@ -1,57 +1,470 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ESP32 Temperature Dashboard</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h2 { margin-bottom: 5px; }
-    .data-row { margin: 10px 0; }
-    button { margin-left: 10px; padding: 5px 10px; }
-    #status {
-      margin: 15px 0;
-      padding: 10px;
-      border-radius: 5px;
-      display: none;
-    }
-    .success { background-color: #d4edda; color: #155724; }
-    .error { background-color: #f8d7da; color: #721c24; }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  </style>
+<style>body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f7f9;
+}
+/* iPhone-style toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #007bff;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.status-text {
+  display: inline-block;
+  margin-left: 10px;
+  font-weight: 600;
+  color: #555;
+  width: 40px;
+}
+
+h2, h3 {
+  margin: 10px 0;
+  color: #333;
+}
+
+#dashboard {
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.data-row {
+  margin: 12px 0;
+  font-size: 16px;
+}
+
+.data-row button {
+  margin-left: 10px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.data-row button:hover {
+  background-color: #0056b3;
+}
+
+#status {
+  margin: 15px 0;
+  padding: 10px;
+  border-radius: 5px;
+  display: none;
+}
+
+.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+#login-container {
+  max-width: 300px;
+  margin: 100px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+}
+
+input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+select, button {
+  padding: 8px 12px;
+  margin: 5px 0;
+}
+
+#chart {
+  width: 100%;
+  height: 500px;
+  margin-top: 20px;
+}
+
+/* Scrollable Table with Sticky Header */
+.table-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #007bff;
+  color: white;
+  z-index: 2;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+  text-align: center;
+}
+
+tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+/* Visual thermometer with ranges and pointer */
+.visuals-container {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 20px;
+  align-items: center;
+  justify-content: center; /* Center horizontally on wide screens */
+}
+
+/* Thermometer container with colored ranges */
+.thermometer-container {
+  position: relative;
+  width: 60px;
+  height: 180px;
+  background: linear-gradient(
+    to top,
+    orange 0%,
+    orange 20%,   /* 0-10°C */
+    green 20%,
+    green 60%,    /* 10-30°C */
+    red 60%,
+    red 100%      /* 30-50°C */
+  );
+  border-radius: 30px;
+  border: 2px solid #999;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.15);
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+/* Pointer arrow */
+.pointer-arrow {
+  position: absolute;
+  left: 100%; /* just outside right edge */
+  width: 0; 
+  height: 0; 
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 15px solid #f44336;
+  transform: translateY(0);
+  transition: transform 0.5s ease;
+  pointer-events: none;
+  margin-left: 5px;
+}
+
+/* Celsius scale on left */
+.scale-celsius {
+  position: absolute;
+  left: -40px;
+  top: 0;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #333;
+  user-select: none;
+}
+
+/* Fahrenheit scale on right */
+.scale-fahrenheit {
+  position: absolute;
+  right: -45px;
+  top: 0;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #333;
+  user-select: none;
+}
+
+/* Label under thermometer */
+.thermo-label {
+  text-align: center;
+  margin-top: 6px;
+  font-weight: bold;
+  color: #333;
+  user-select: none;
+  font-size: 14px;
+}
+
+/* Humidity dial container */
+.humidity-container {
+  width: 140px;
+  height: 140px;
+  position: relative;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Humidity dial label */
+.humidity-label {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  bottom: -30px;
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Humidity value text inside dial */
+.humidity-value {
+  position: absolute;
+  width: 100%;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22px;
+  font-weight: bold;
+  color: #2196f3;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .visuals-container {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .thermometer-container,
+  .humidity-container {
+    margin: 0 auto; /* Center horizontally */
+  }
+
+  table {
+    min-width: unset;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .data-row {
+    font-size: 14px;
+  }
+
+  .data-row button {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  #login-container {
+    margin: 50px 10px;
+    padding: 15px;
+  }
+
+  .humidity-container {
+    width: 120px;
+    height: 120px;
+  }
+
+  .humidity-value {
+    font-size: 18px;
+  }
+}
+</style>
 </head>
+  <header style="display: flex; align-items: center; gap: 15px; padding: 10px 20px; background: #007bff; color: white;">
+    <img src="https://yt3.googleusercontent.com/ytc/AIdro_mLGSLQg3O6UAMTjsAEVT1h4wZqbFxWeYXsM4MQvTMvQnE=s900-c-k-c0x00ffffff-no-rj" alt="JEEP Logo" style="height: 50px;"/>
+    <h1 style="margin: 0;">Welcome to JEEP SolarDrier</h1>
+    <img src="https://codebitstechnologies.com/static/media/logo.241ddd6b.png" alt="CodeBits Technologies Logo" style="height: 40px; margin-left: auto;"/>
+  </header>
 <body>
-  <h2>ESP32 Temperature Dashboard</h2>
 
-  <div class="data-row"><strong>Temperature:</strong> <span id="temp">—</span></div>
-  <div class="data-row"><strong>Humidity:</strong> <span id="hum">—</span></div>
-
-  <div class="data-row">
-    <strong>Motor 1:</strong> <span id="relay1">—</span>
-    <button id="btnM1On" onclick="setRelay(3, 1)">ON</button>
-    <button id="btnM1Off" onclick="setRelay(3, 0)">OFF</button>
+  <!-- 🔐 Login Form -->
+  <div id="login-container">
+    <h3>Login</h3>
+    <input type="text" id="username" placeholder="Username"><br />
+    <input type="password" id="password" placeholder="Password"><br />
+    <button onclick="login()">Login</button>
+    <div id="login-msg" style="color:red; margin-top:10px;"></div>
   </div>
 
-  <div class="data-row">
-    <strong>Motor 2:</strong> <span id="relay2">—</span>
-    <button id="btnM2On" onclick="setRelay(4, 1)">ON</button>
-    <button id="btnM2Off" onclick="setRelay(4, 0)">OFF</button>
+  <!-- 📊 Dashboard -->
+  <div id="dashboard" style="display:none;">
+    <h2>ESP32 Temperature Dashboard</h2>
+
+    <!-- Visuals container for thermometer and humidity -->
+    <div class="visuals-container">
+
+      <div style="position:relative;">
+        <div class="thermometer-container" id="thermometer">
+          <div class="pointer-arrow" id="tempPointer"></div>
+          <div class="scale-celsius">
+       
+
+         <div>122°F</div>
+            <div>104°F</div>
+            <div>86°F</div>
+            <div>68°F</div>
+            <div>50°F</div>
+            <div>32°F</div>
+          </div>
+          <div class="scale-fahrenheit">
+                 <div>50°C</div>
+            <div>40°C</div>
+            <div>30°C</div>
+            <div>20°C</div>
+            <div>10°C</div>
+            <div>0°C</div>
+
+   
+          </div>
+        </div>
+        <div class="thermo-label">Temperature</div>
+      </div>
+
+      <div class="humidity-container">
+        <svg id="humidityDial" width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="60" stroke="#2196f3" stroke-width="8" fill="none" opacity="0.3"/>
+          <circle cx="70" cy="70" r="60" stroke="#2196f3" stroke-width="8" fill="none"
+            stroke-linecap="round" 
+            stroke-dasharray="377"
+            stroke-dashoffset="377"/>
+          <line id="humidityNeedle" x1="70" y1="70" x2="70" y2="20" stroke="#2196f3" stroke-width="4" stroke-linecap="round" />
+          <text x="70" y="130" font-size="16" font-weight="bold" fill="#333" text-anchor="middle">Humidity</text>
+          <text id="humidityText" x="70" y="80" font-size="24" font-weight="bold" fill="#2196f3" text-anchor="middle">--%</text>
+        </svg>
+      </div>
+
+    </div>
+
+    <div class="data-row"><strong>Motor 1:</strong> <span id="relay1">—</span>
+      <button id="btnM1On" onclick="setRelay(3, 1)">ON</button>
+      <button id="btnM1Off" onclick="setRelay(3, 0)">OFF</button>
+    </div>
+
+    <div class="data-row"><strong>Motor 2:</strong> <span id="relay2">—</span>
+      <button id="btnM2On" onclick="setRelay(4, 1)">ON</button>
+      <button id="btnM2Off" onclick="setRelay(4, 0)">OFF</button>
+    </div>
+
+    <div class="data-row" id="lastUpdate">Last update: —</div>
+    <div id="status"></div>
+
+    <div id="chart"></div>
+
+    <h3>Data Table</h3>
+    <label for="timeframe">Show data from:</label>
+    <select id="timeframe">
+      <option value="10m">Last 10 Minutes</option>
+      <option value="1h">Last 1 Hour</option>
+      <option value="6h">Last 6 Hours</option>
+      <option value="1d">Last 1 Day</option>
+    </select>
+    <button onclick="loadTableData()">Load Data</button>
+    <button onclick="exportCSV()">Export CSV</button>
+
+    <div class="table-container">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Temperature (°C)</th>
+            <th>Humidity (%)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="data-row" id="lastUpdate">Last update: —</div>
-
-  <div id="status"></div>
-
-  <div id="chart" style="width:100%; height:500px;"></div>
-
+  <!-- 🔌 JavaScript Logic -->
   <script>
     const channelID = "3082785";
     const readAPI = "JRBASV8AOT1TXBJZ";
     const writeAPI = "CBZLR0Q1V6JUA2HS";
+    let isCooldown = false;
+    let lastFilteredData = [];
 
-    let isCooldown = false; // to prevent rapid switching
+    function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      const msg = document.getElementById('login-msg');
+
+      if (user === "admin" && pass === "jeep1") {
+        document.getElementById('login-container').style.display = "none";
+        document.getElementById('dashboard').style.display = "block";
+        fetchLatest();
+        plotGraph();
+        setInterval(() => {
+          fetchLatest();
+          plotGraph();
+        }, 30000);
+      } else {
+        msg.textContent = "Invalid username or password!";
+      }
+    }
 
     function showMessage(message, type = "success") {
       const statusDiv = document.getElementById("status");
@@ -80,13 +493,10 @@
       setButtonsDisabled(true);
 
       try {
-        // Fetch latest data first
         const resLatest = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds/last.json?api_key=${readAPI}`);
         if (!resLatest.ok) throw new Error(`Failed to fetch latest data: ${resLatest.status}`);
-
         const latestData = await resLatest.json();
 
-        // Prepare all fields with current values, update only target relay field
         const fields = {
           field1: latestData.field1 || '',
           field2: latestData.field2 || '',
@@ -96,32 +506,25 @@
 
         fields[`field${fieldNum}`] = value.toString();
 
-        // Build update URL with all fields to preserve data
         const updateUrl = `https://api.thingspeak.com/update?api_key=${writeAPI}` +
           `&field1=${encodeURIComponent(fields.field1)}` +
           `&field2=${encodeURIComponent(fields.field2)}` +
           `&field3=${encodeURIComponent(fields.field3)}` +
           `&field4=${encodeURIComponent(fields.field4)}`;
 
-        // Send update request
         const resUpdate = await fetch(updateUrl);
-        if (resUpdate.ok) {
-          const text = await resUpdate.text();
-          if (text === '0') {
-            showMessage("ThingSpeak update rejected (rate limit or invalid data)", "error");
-          } else {
-            showMessage(`Motor ${fieldNum - 2} switched ${value === 1 ? "ON" : "OFF"}`, "success");
-            setTimeout(fetchLatest, 2000);
-          }
+        const text = await resUpdate.text();
+        if (text === '0') {
+          showMessage("ThingSpeak update rejected (rate limit or invalid data)", "error");
         } else {
-          showMessage(`Failed to send command: HTTP ${resUpdate.status}`, "error");
+          showMessage(`Motor ${fieldNum - 2} switched ${value === 1 ? "ON" : "OFF"}`, "success");
+          setTimeout(fetchLatest, 2000);
         }
       } catch (e) {
         console.error("Error setting relay:", e);
         showMessage("Network or API error switching relay: " + e.message, "error");
       }
 
-      // Enforce 15 seconds cooldown before allowing next switch
       setTimeout(() => {
         isCooldown = false;
         setButtonsDisabled(false);
@@ -133,15 +536,23 @@
         const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds/last.json?api_key=${readAPI}`);
         const data = await res.json();
 
-        const temp = data.field1;
-        const hum = data.field2;
+        const temp = parseFloat(data.field1);
+        const hum = parseFloat(data.field2);
         const relay1 = data.field3;
         const relay2 = data.field4;
 
-        document.getElementById("temp").textContent = temp ? temp + " °C" : "—";
-        document.getElementById("hum").textContent = hum ? hum + " %" : "—";
         document.getElementById("relay1").textContent = relay1 === "1" ? "ON" : "OFF";
         document.getElementById("relay2").textContent = relay2 === "1" ? "ON" : "OFF";
+
+        // Update thermometer
+        updateThermometer(temp);
+
+        // Update humidity dial
+        updateHumidityDial(hum);
+
+        // Update text values
+        document.getElementById("temp").textContent = isNaN(temp) ? "—" : temp.toFixed(1) + " °C";
+        document.getElementById("hum").textContent = isNaN(hum) ? "—" : hum.toFixed(1) + " %";
 
         const lastUpdateTime = new Date(data.created_at);
         const now = new Date();
@@ -149,61 +560,155 @@
         document.getElementById("lastUpdate").textContent = `Last update: ${minutesAgo} min ago`;
       } catch (e) {
         console.error("Error fetching data:", e);
-        document.getElementById("temp").textContent = "Err";
-        document.getElementById("hum").textContent = "Err";
-        document.getElementById("relay1").textContent = "—";
-        document.getElementById("relay2").textContent = "—";
-        document.getElementById("lastUpdate").textContent = "Error fetching update";
         showMessage("Failed to load data", "error");
       }
     }
 
+    function updateThermometer(tempC) {
+      const pointer = document.getElementById("tempPointer");
+      if (isNaN(tempC)) {
+        pointer.style.transform = "translateY(180px)";
+        return;
+      }
+      // Clamp temperature between 0 and 50
+      const clampedTemp = Math.min(Math.max(tempC, 0), 50);
+      // Map 0°C (bottom) to 50°C (top), thermometer height = 180px
+      // pointer's top position should move from 160px (bottom) to 0px (top)
+      // We translate the arrow vertically by pointerY:
+      const pointerY = 180 - (clampedTemp / 50) * 180 - 10; // subtract half arrow height to center it
+
+      pointer.style.transform = `translateY(${pointerY}px)`;
+    }
+
+    function updateHumidityDial(hum) {
+      const dial = document.getElementById("humidityDial");
+      const needle = document.getElementById("humidityNeedle");
+      const text = document.getElementById("humidityText");
+
+      if (isNaN(hum) || hum < 0 || hum > 100) {
+        text.textContent = "--%";
+        needle.setAttribute("transform", "");
+        return;
+      }
+
+      // Humidity dial arc circumference ~ 2 * PI * 60 = 377
+      // Dash offset 377 means empty, 0 means full circle
+      const dashOffset = 377 - (377 * hum) / 100;
+      dial.querySelectorAll("circle")[1].style.strokeDashoffset = dashOffset;
+
+      // Rotate needle from -90deg (0%) to 90deg (100%)
+      const angle = (hum / 100) * 180 - 90;
+      needle.setAttribute("transform", `rotate(${angle} 70 70)`);
+
+      text.textContent = `${hum.toFixed(1)}%`;
+    }
+
     async function plotGraph() {
       try {
-        const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPI}&results=50`);
+        const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPI}&results=800`);
         const json = await res.json();
-        const feeds = json.feeds;
 
-        const times = feeds.map(feed => feed.created_at);
-        const temps = feeds.map(feed => parseFloat(feed.field1));
-        const hums = feeds.map(feed => parseFloat(feed.field2));
+        const feeds = json.feeds || [];
+        if (feeds.length === 0) {
+          showMessage("No data to plot", "error");
+          return;
+        }
 
-        const tempTrace = {
+        const times = feeds.map(f => new Date(f.created_at));
+        const temps = feeds.map(f => parseFloat(f.field1));
+        const hums = feeds.map(f => parseFloat(f.field2));
+
+        const traceTemp = {
           x: times,
           y: temps,
-          name: 'Temperature (°C)',
-          mode: 'lines+markers',
-          line: { color: 'red' }
+          mode: "lines+markers",
+          name: "Temperature (°C)",
+          line: { color: "#f44336" },
+          yaxis: "y1"
         };
 
-        const humTrace = {
+        const traceHum = {
           x: times,
           y: hums,
-          name: 'Humidity (%)',
-          mode: 'lines+markers',
-          line: { color: 'blue' }
+          mode: "lines+markers",
+          name: "Humidity (%)",
+          line: { color: "#2196f3" },
+          yaxis: "y2"
         };
 
         const layout = {
-          title: 'Temperature & Humidity Over Time',
-          xaxis: { title: 'Time' },
-          yaxis: { title: 'Value' }
+          title: "Temperature and Humidity Over Time",
+          xaxis: { title: "Time" },
+          yaxis: { title: "Temperature (°C)", side: "left", range: [0, 50] },
+          yaxis2: {
+            title: "Humidity (%)",
+            side: "right",
+            overlaying: "y",
+            range: [0, 100]
+          },
+          legend: { orientation: "h" },
+          margin: { t: 40, r: 60 }
         };
 
-        Plotly.newPlot('chart', [tempTrace, humTrace], layout);
+        Plotly.newPlot("chart", [traceTemp, traceHum], layout, {responsive: true});
       } catch (e) {
-        console.error("Error loading graph:", e);
-        showMessage("Failed to load graph", "error");
+        console.error("Plotting error:", e);
+        showMessage("Failed to load graph data", "error");
       }
     }
 
-    // Initial load and periodic updates
-    fetchLatest();
-    plotGraph();
-    setInterval(() => {
-      fetchLatest();
-      plotGraph();
-    }, 30000);
+    async function loadTableData() {
+      const timeframe = document.getElementById("timeframe").value;
+      let durationMs = 10 * 60 * 1000; // default 10 minutes
+      if (timeframe === "1h") durationMs = 60 * 60 * 1000;
+      else if (timeframe === "6h") durationMs = 6 * 60 * 60 * 1000;
+      else if (timeframe === "1d") durationMs = 24 * 60 * 60 * 1000;
+
+      try {
+        const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPI}&results=800`);
+        const json = await res.json();
+        const feeds = json.feeds || [];
+
+        const now = new Date();
+        lastFilteredData = feeds.filter(f => now - new Date(f.created_at) <= durationMs);
+
+        const tbody = document.querySelector("#data-table tbody");
+        tbody.innerHTML = "";
+        lastFilteredData.forEach(f => {
+          const tr = document.createElement("tr");
+          const time = new Date(f.created_at);
+          tr.innerHTML = `
+            <td>${time.toLocaleString()}</td>
+            <td>${parseFloat(f.field1).toFixed(1)}</td>
+            <td>${parseFloat(f.field2).toFixed(1)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        showMessage("Failed to load table data", "error");
+      }
+    }
+
+    function exportCSV() {
+      if (!lastFilteredData.length) {
+        showMessage("No data to export", "error");
+        return;
+      }
+      let csv = "Time,Temperature (°C),Humidity (%)\n";
+      lastFilteredData.forEach(f => {
+        const time = new Date(f.created_at).toLocaleString();
+        const temp = parseFloat(f.field1).toFixed(1);
+        const hum = parseFloat(f.field2).toFixed(1);
+        csv += `${time},${temp},${hum}\n`;
+      });
+      const blob = new Blob([csv], {type: "text/csv"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sensor_data.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
