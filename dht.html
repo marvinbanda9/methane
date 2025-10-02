@@ -396,6 +396,75 @@ tr:nth-child(even) {
           <text id="humidityText" x="70" y="80" font-size="24" font-weight="bold" fill="#2196f3" text-anchor="middle">--%</text>
         </svg>
       </div>
+<!-- 🔋 Battery Indicator -->
+<div class="battery-container">
+  <style>
+    .battery-container {
+      text-align: center;
+      font-size: 14px;
+      color: #333;
+      user-select: none;
+    }
+
+    .battery {
+      position: relative;
+      width: 60px;
+      height: 25px;
+      border: 2px solid #333;
+      border-radius: 4px;
+      margin: 0 auto 5px;
+      box-sizing: border-box;
+    }
+
+    .battery-level {
+      height: 100%;
+      background-color: #4caf50; /* green by default */
+      border-radius: 2px 0 0 2px;
+      transition: width 0.3s ease;
+      width: 75%; /* dummy default */
+    }
+
+    .battery-cap {
+      position: absolute;
+      top: 6px;
+      right: -6px;
+      width: 4px;
+      height: 12px;
+      background: #333;
+      border-radius: 1px;
+    }
+
+    .battery-label {
+      font-weight: bold;
+      margin-top: 3px;
+    }
+  </style>
+
+  <div class="battery">
+    <div class="battery-level" id="batteryBar"></div>
+    <div class="battery-cap"></div>
+  </div>
+  <div class="battery-label" id="batteryLabel">Battery: 75%</div>
+
+  <script>
+    function setBatteryLevel(percent) {
+      const level = Math.max(0, Math.min(percent, 100)); // Clamp between 0–100
+      const bar = document.getElementById("batteryBar");
+      const label = document.getElementById("batteryLabel");
+
+      bar.style.width = level + "%";
+      label.textContent = "Battery: " + level + "%";
+
+      // Change color based on level
+      if (level < 20) bar.style.backgroundColor = "#f44336";      // red
+      else if (level < 50) bar.style.backgroundColor = "#ff9800"; // orange
+      else bar.style.backgroundColor = "#4caf50";                  // green
+    }
+
+    // Dummy value: set to 75% initially
+    setBatteryLevel(75);
+  </script>
+</div>
 
     </div>
 
