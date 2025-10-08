@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Isingiro Smart Fishing</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 30px;
+      background: #f5f7fa;
+      color: #333;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.8rem;
+      margin-bottom: 25px;
+    }
+    h1 img {
+      height: 35px;
+      width: auto;
+      object-fit: contain;
+    }
+    .data-box {
+      background: #fff;
+      padding: 25px 30px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      max-width: 900px;
+      margin-bottom: 40px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .status-text {
+      margin-left: 12px;
+      font-weight: 600;
+      color: #555;
+      min-width: 90px;
+    }
+    .switch-box, .heater-box {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    label.switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    label.switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px; width: 26px;
+      left: 4px; bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .error {
+      color: #d9534f;
+      font-weight: 600;
+      margin-top: 15px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .data-row p {
+      flex: 1 1 150px;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    #tempChart {
+      width: 100%;
+      height: 400px;
+      margin-bottom: 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      background: #fff;
+      padding: 15px;
+    }
+    /* Table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    }
+    table thead {
+      background: #4CAF50;
+      color: white;
+      font-weight: 700;
+      user-select: none;
+    }
+    table thead th {
+      position: sticky;
+      top: 0;
+      background: #4CAF50;
+      z-index: 10;
+      padding: 12px 15px;
+      text-align: center;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15);
+    }
+    table tbody td {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #e1e8f0;
+      font-size: 0.95rem;
+      color: #444;
+    }
+    table tbody tr:hover {
+      background-color: #f1f9f1;
+      transition: background-color 0.3s ease;
+    }
+    .export-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      max-width: 900px;
+    }
+    .export-container button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      font-size: 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 3px 6px rgba(0,128,0,0.4);
+      transition: background-color 0.3s ease;
+    }
+    .export-container button:hover {
+      background-color: #45a049;
+    }
+    .export-container select {
+      padding: 8px 12px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      min-width: 160px;
+      font-weight: 600;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      transition: border-color 0.2s ease;
+    }
+    .export-container select:focus {
+      border-color: #4CAF50;
+      outline: none;
+    }
+    /* Heater dial styles */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 150px;
+      height: 6px;
+      border-radius: 5px;
+      background: #ddd;
+      cursor: pointer;
+      margin: 0;
+    }
+    input[type=range]:focus {
+      outline: none;
+      background: #ccc;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
+      box-shadow: 0 0 2px rgba(0,0,0,0.5);
+      transition: background-color 0.3s ease;
+      margin-top: -7px;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
+      box-shadow: 0 0 2px rgba(0,0,0,0.5);
+      transition: background-color 0.3s ease;
+    }
+    .heater-box span.value {
+      font-weight: 700;
+      font-size: 1rem;
+      min-width: 35px;
+      text-align: center;
+      user-select: none;
+    }
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+      .data-row p {
+        flex: 1 1 100%;
+      }
+      .export-container {
+        flex-direction: column;
+        gap: 10px;
+        max-width: 100%;
+      }
+      .export-container button, .export-container select {
+        width: 100%;
+      }
+      input[type=range] {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <img src="https://codebitstechnologies.com/static/media/logo.241ddd6b.png" alt="Logo" />
+    Isingiro Smart Fishing
+  </h1>
+
+  <div class="data-box">
+    <!-- Motor switch -->
+    <div class="switch-box">
+      <label class="switch">
+        <input type="checkbox" id="motorSwitch" onchange="toggleMotor()">
+        <span class="slider"></span>
+      </label>
+      <span class="status-text" id="motorStatus">Loading motor status…</span>
+    </div>
+
+    <!-- Heater dial -->
+    <div class="heater-box">
+      <label for="heaterDial" style="font-weight:600;">Heater Level:</label>
+      <input type="range" id="heaterDial" min="0" max="100" step="1" value="0" onchange="updateHeaterDial(this.value)" oninput="updateHeaterDial(this.value)" />
+      <span class="value" id="heaterValue">0</span>%
+      <span class="status-text" id="heaterStatus">Loading heater status…</span>
+    </div>
+
+    <!-- Data fields horizontal -->
+    <div class="data-row">
+      <p><strong>t1:</strong> <span id="t1">Loading…</span></p>
+      <p><strong>t2:</strong> <span id="t2">Loading…</span></p>
+      <p><strong>air:</strong> <span id="air">Loading…</span></p>
+      <p><strong>h:</strong> <span id="h">Loading…</span></p>
+      <p><strong>Last updated:</strong> <span id="lastUpdate">Loading…</span></p>
+      <p><strong>Minutes ago:</strong> <span id="minutesAgo">Loading…</span></p>
+    </div>
+
+    <h2>Temperature & Humidity Over Time</h2>
+    <div id="tempChart"></div>
+
+    <div class="export-container">
+      <button id="exportBtn">Export Data CSV</button>
+      <select id="timeframeSelect">
+        <option value="1hour">Last 1 Hour</option>
+        <option value="1day" selected>Last 1 Day</option>
+        <option value="1week">Last 1 Week</option>
+        <option value="1month">Last 1 Month</option>
+      </select>
+    </div>
+
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Tank 1 Temp (t1)</th>
+          <th>Tank 2 Temp (t2)</th>
+          <th>Air Temp (air)</th>
+          <th>Humidity (h)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled dynamically -->
+      </tbody>
+    </table>
+
+    <p class="error" id="errMsg"></p>
+  </div>
+
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script>
+    const readKey = "PUGK1OSZN7U7RJEK";
+    const writeKey = "GPG1T134TPA0G42T";
+    const channelId = "3102426";
+    const updateUrl = `https://api.thingspeak.com/update`;
+
+    const motorSwitch = document.getElementById("motorSwitch");
+    const heaterDial = document.getElementById("heaterDial");
+    const motorStatusText = document.getElementById("motorStatus");
+    const heaterStatusText = document.getElementById("heaterStatus");
+    const heaterValueSpan = document.getElementById("heaterValue");
+    const errMsg = document.getElementById("errMsg");
+
+    const timeframeSelect = document.getElementById("timeframeSelect");
+    const exportBtn = document.getElementById("exportBtn");
+
+    const tempChartDiv = document.getElementById("tempChart");
+    const dataTableBody = document.querySelector("#dataTable tbody");
+
+    // Store fetched data globally for export
+    let currentFeeds = [];
+
+    // Fetch current/latest data (motor, heater, temps)
+    async function fetchData() {
+      try {
+        const resp = await fetch(`https://api.thingspeak.com/channels/${channelId}/feeds/last.json?api_key=${readKey}`);
+        const data = await resp.json();
+
+        const t1 = data.field1;
+        const t2 = data.field2;
+        const air = data.field3;
+        const h = data.field4;
+        const motorField = data.field5;
+        const heaterField = data.field6; // heater level (0-100)
+        const created = data.created_at;
+
+        const entryTime = new Date(created);
+        const now = new Date();
+        const diffMin = Math.floor((now - entryTime) / 60000);
+
+        document.getElementById("t1").textContent = t1 ?? "(null)";
+        document.getElementById("t2").textContent = t2 ?? "(null)";
+        document.getElementById("air").textContent = air ?? "(null)";
+        document.getElementById("h").textContent = h ?? "(null)";
+        document.getElementById("lastUpdate").textContent = entryTime.toLocaleString();
+        document.getElementById("minutesAgo").textContent = diffMin + " min";
+
+        if (motorField === "1") {
+          motorSwitch.checked = true;
+          motorStatusText.textContent = "Motor is ON";
+        } else {
+          motorSwitch.checked = false;
+          motorStatusText.textContent = "Motor is OFF";
+        }
+
+        const heaterLevel = Number(heaterField);
+        if (!isNaN(heaterLevel)) {
+          heaterDial.value = heaterLevel;
+          heaterValueSpan.textContent = heaterLevel;
+          heaterStatusText.textContent = `Heater level: ${heaterLevel}%`;
+        } else {
+          heaterDial.value = 0;
+          heaterValueSpan.textContent = 0;
+          heaterStatusText.textContent = "Heater level unknown";
+        }
+
+        errMsg.textContent = "";
+      } catch (err) {
+        errMsg.textContent = "Error fetching data: " + err.message;
+      }
+    }
+
+    // Toggle motor ON/OFF
+    async function toggleMotor() {
+      const val = motorSwitch.checked ? 1 : 0;
+      motorStatusText.textContent = val === 1 ? "Turning motor ON…" : "Turning motor OFF…";
+      try {
+        const url = `${updateUrl}?api_key=${writeKey}&field5=${val}`;
+        const resp = await fetch(url);
+        const result = await resp.text();
+        if (result === "0") {
+          throw new Error("Update failed");
+        }
+        motorStatusText.textContent = val === 1 ? "Motor is ON" : "Motor is OFF";
+      } catch (err) {
+        motorStatusText.textContent = "Error updating motor: " + err.message;
+        motorSwitch.checked = !motorSwitch.checked; // revert switch
+      }
+    }
+
+    // Update heater dial value and send to ThingSpeak
+    let heaterUpdateTimeout;
+    function updateHeaterDial(val) {
+      heaterValueSpan.textContent = val;
+      heaterStatusText.textContent = `Heater level: ${val}% (updating...)`;
+
+      // Debounce update, wait 1 second after last change before sending
+      if (heaterUpdateTimeout) clearTimeout(heaterUpdateTimeout);
+
+      heaterUpdateTimeout = setTimeout(async () => {
+        try {
+          const url = `${updateUrl}?api_key=${writeKey}&field6=${val}`;
+          const resp = await fetch(url);
+          const result = await resp.text();
+          if (result === "0") throw new Error("Update failed");
+          heaterStatusText.textContent = `Heater level: ${val}%`;
+        } catch (err) {
+          heaterStatusText.textContent = "Error updating heater: " + err.message;
+        }
+      }, 1000);
+    }
+
+    // Fetch historical data for chart & table based on timeframe
+    async function fetchHistoricalData(hours = 24) {
+      // Construct URL with timespan param for last N hours
+      // ThingSpeak supports results with 'start' param
+      // We'll calculate start time based on hours ago in ISO8601
+      const now = new Date();
+      const startDate = new Date(now.getTime() - hours * 3600 * 1000);
+      const startStr = startDate.toISOString();
+
+      try {
+        const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${readKey}&start=${startStr}&results=8000`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (!data.feeds || data.feeds.length === 0) {
+          throw new Error("No data found");
+        }
+
+        currentFeeds = data.feeds;
+
+        // Populate chart
+        plotData(data.feeds);
+
+        // Populate table
+        fillTable(data.feeds);
+
+        errMsg.textContent = "";
+      } catch (err) {
+        errMsg.textContent = "Error fetching historical data: " + err.message;
+        tempChartDiv.innerHTML = "";
+        dataTableBody.innerHTML = "";
+      }
+    }
+
+    function plotData(feeds) {
+      // Extract arrays for plotting
+      const timestamps = feeds.map(f => new Date(f.created_at));
+      const t1 = feeds.map(f => f.field1 ? Number(f.field1) : null);
+      const t2 = feeds.map(f => f.field2 ? Number(f.field2) : null);
+      const air = feeds.map(f => f.field3 ? Number(f.field3) : null);
+      const h = feeds.map(f => f.field4 ? Number(f.field4) : null);
+
+      const traces = [
+        {
+          x: timestamps,
+          y: t1,
+          name: 'Tank 1 Temp (t1)',
+          mode: 'lines+markers',
+          line: { color: 'rgb(31, 119, 180)' },
+          connectgaps: true,
+          yaxis: 'y1'
+        },
+        {
+          x: timestamps,
+          y: t2,
+          name: 'Tank 2 Temp (t2)',
+          mode: 'lines+markers',
+          line: { color: 'rgb(255, 127, 14)' },
+          connectgaps: true,
+          yaxis: 'y1'
+        },
+        {
+          x: timestamps,
+          y: air,
+          name: 'Air Temp (air)',
+          mode: 'lines+markers',
+          line: { color: 'rgb(44, 160, 44)' },
+          connectgaps: true,
+          yaxis: 'y2'
+        },
+        {
+          x: timestamps,
+          y: h,
+          name: 'Humidity (h)',
+          mode: 'lines+markers',
+          line: { color: 'rgb(214, 39, 40)' },
+          connectgaps: true,
+          yaxis: 'y2'
+        }
+      ];
+
+      const layout = {
+        title: 'Temperature & Humidity Over Time',
+        margin: { t: 30, b: 40, l: 50, r: 50 },
+        hovermode: 'closest',
+        legend: { orientation: 'h', y: -0.3 },
+        xaxis: {
+          title: 'Time',
+          showgrid: true,
+          zeroline: false
+        },
+        yaxis: {
+          title: 'Tank Temps (°C)',
+          side: 'left',
+          range: [Math.min(...t1.filter(x => x !== null), ...t2.filter(x => x !== null)) - 5,
+                  Math.max(...t1.filter(x => x !== null), ...t2.filter(x => x !== null)) + 5],
+          showgrid: true,
+          zeroline: false
+        },
+        yaxis2: {
+          title: 'Air Temp / Humidity',
+          overlaying: 'y',
+          side: 'right',
+          range: [Math.min(...air.filter(x => x !== null), ...h.filter(x => x !== null)) - 5,
+                  Math.max(...air.filter(x => x !== null), ...h.filter(x => x !== null)) + 5],
+          showgrid: false,
+          zeroline: false
+        },
+        autosize: true
+      };
+
+      Plotly.newPlot(tempChartDiv, traces, layout, {responsive:true});
+    }
+
+    // Fill table with data rows
+    function fillTable(feeds) {
+      dataTableBody.innerHTML = "";
+      for (const feed of feeds) {
+        const tr = document.createElement("tr");
+
+        const tsCell = document.createElement("td");
+        tsCell.textContent = new Date(feed.created_at).toLocaleString();
+        tr.appendChild(tsCell);
+
+        const t1Cell = document.createElement("td");
+        t1Cell.textContent = feed.field1 ?? "";
+        tr.appendChild(t1Cell);
+
+        const t2Cell = document.createElement("td");
+        t2Cell.textContent = feed.field2 ?? "";
+        tr.appendChild(t2Cell);
+
+        const airCell = document.createElement("td");
+        airCell.textContent = feed.field3 ?? "";
+        tr.appendChild(airCell);
+
+        const hCell = document.createElement("td");
+        hCell.textContent = feed.field4 ?? "";
+        tr.appendChild(hCell);
+
+        dataTableBody.appendChild(tr);
+      }
+    }
+
+    // Export currentFeeds to CSV
+    function exportCSV() {
+      if (currentFeeds.length === 0) {
+        alert("No data to export.");
+        return;
+      }
+
+      let csv = "Timestamp,t1,t2,air,h\n";
+      currentFeeds.forEach(feed => {
+        const row = [
+          feed.created_at,
+          feed.field1 ?? "",
+          feed.field2 ?? "",
+          feed.field3 ?? "",
+          feed.field4 ?? ""
+        ].join(",");
+        csv += row + "\n";
+      });
+
+      // Download
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `IsingiroFishingData_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Handle timeframe change
+    timeframeSelect.addEventListener("change", () => {
+      let hours = 24; // default 1 day
+      switch(timeframeSelect.value) {
+        case "1hour": hours = 1; break;
+        case "1day": hours = 24; break;
+        case "1week": hours = 24*7; break;
+        case "1month": hours = 24*30; break;
+      }
+      fetchHistoricalData(hours);
+    });
+
+    exportBtn.addEventListener("click", exportCSV);
+
+    // Initial fetches
+    fetchData();
+    fetchHistoricalData(24);
+
+    // Refresh latest status every 60 seconds
+    setInterval(fetchData, 60000);
+
+  </script>
+</body>
+</html>
