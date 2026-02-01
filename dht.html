@@ -1,783 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SolarDrier Dashboard</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<style>body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f4f7f9;
-}
-/* iPhone-style toggle switch */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-  margin-left: 10px;
-  vertical-align: middle;
-}
+<meta charset="UTF-8">
 
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+<!-- SEO META TAGS -->
+<title>TechCare IT Solutions | IT Maintenance & Embedded Systems</title>
+<meta name="description" content="Professional IT maintenance, GPS vehicle tracking, surveillance camera systems, and embedded solutions for organizations.">
+<meta name="keywords" content="IT maintenance, GPS tracking, surveillance cameras, embedded systems, PC repair, IoT">
+<meta name="author" content="TechCare IT Solutions">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc;
-  border-radius: 24px;
-  transition: 0.4s;
+<style>
+:root{
+  --bg:#f4f6f8;
+  --text:#111;
+  --card:#ffffff;
+  --primary:#0a2540;
+  --accent:#00d4ff;
 }
+body.dark{
+  --bg:#020617;
+  --text:#e5e7eb;
+  --card:#0f172a;
+  --primary:#020617;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
+body{background:var(--bg);color:var(--text);transition:.3s}
+section{padding:70px 20px;max-width:1200px;margin:auto}
+h2{text-align:center;margin-bottom:40px;font-size:32px}
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.4s;
+/* NAVBAR */
+header{background:var(--primary);position:sticky;top:0;z-index:1000}
+nav{display:flex;justify-content:space-between;align-items:center;padding:15px 20px}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:bold;font-size:20px}
+.logo img{height:40px;width:40px;border-radius:6px;object-fit:cover}
+.menu{display:none;flex-direction:column;background:var(--primary)}
+.menu a{color:#fff;padding:15px;text-decoration:none;border-top:1px solid rgba(255,255,255,.1)}
+.menu a:hover{background:rgba(255,255,255,.1)}
+.hamburger{color:#fff;font-size:26px;cursor:pointer}
+@media(min-width:768px){
+  .hamburger{display:none}
+  .menu{display:flex!important;flex-direction:row;background:none}
+  .menu a{border:none}
 }
 
-input:checked + .slider {
-  background-color: #007bff;
+/* HERO */
+.hero{
+  background:linear-gradient(to right,#020617,#0a2540);
+  color:#fff;text-align:center;padding:120px 20px
+}
+.hero img{height:80px;margin-bottom:20px;border-radius:10px}
+.hero h2{font-size:40px}
+.hero p{max-width:700px;margin:20px auto}
+.btn{
+  background:var(--accent);color:#000;padding:12px 25px;
+  border-radius:5px;text-decoration:none;font-weight:bold
 }
 
-input:checked + .slider:before {
-  transform: translateX(26px);
+/* GRID / CARDS */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:25px}
+.card{
+  background:var(--card);padding:25px;border-radius:10px;
+  box-shadow:0 10px 20px rgba(0,0,0,.1);
+  opacity:0;transform:translateY(40px);transition:.6s
+}
+.card.show{opacity:1;transform:none}
+.card img{
+  width:100%;height:180px;object-fit:cover;
+  border-radius:8px;margin-bottom:15px
 }
 
-.status-text {
-  display: inline-block;
-  margin-left: 10px;
-  font-weight: 600;
-  color: #555;
-  width: 40px;
+/* PRICING */
+.price{font-size:32px;color:var(--accent);margin:15px 0}
+
+/* FLOAT BUTTONS */
+.float{
+  position:fixed;right:20px;padding:12px 16px;border-radius:50px;
+  color:#fff;font-weight:bold;text-decoration:none;z-index:999
 }
+.whatsapp{bottom:80px;background:#25d366}
+.email{bottom:20px;background:#2563eb}
 
-h2, h3 {
-  margin: 10px 0;
-  color: #333;
-}
-
-#dashboard {
-  padding: 20px;
-  max-width: 1200px;
-  margin: auto;
-}
-
-.data-row {
-  margin: 12px 0;
-  font-size: 16px;
-}
-
-.data-row button {
-  margin-left: 10px;
-  padding: 6px 12px;
-  font-size: 14px;
-  border: none;
-  border-radius: 4px;
-  background-color: #007bff;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.data-row button:hover {
-  background-color: #0056b3;
-}
-
-#status {
-  margin: 15px 0;
-  padding: 10px;
-  border-radius: 5px;
-  display: none;
-}
-
-.success {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.error {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-#login-container {
-  max-width: 300px;
-  margin: 100px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background: #fff;
-  text-align: center;
-}
-
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-select, button {
-  padding: 8px 12px;
-  margin: 5px 0;
-}
-
-#chart {
-  width: 100%;
-  height: 500px;
-  margin-top: 20px;
-}
-
-/* Scrollable Table with Sticky Header */
-.table-container {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  margin-top: 10px;
-  border-radius: 8px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
-}
-
-thead th {
-  position: sticky;
-  top: 0;
-  background: #007bff;
-  color: white;
-  z-index: 2;
-}
-
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-  text-align: center;
-}
-
-tr:nth-child(even) {
-  background: #f9f9f9;
-}
-
-/* Visual thermometer with ranges and pointer */
-.visuals-container {
-  display: flex;
-  gap: 40px;
-  margin-bottom: 20px;
-  align-items: center;
-  justify-content: center; /* Center horizontally on wide screens */
-}
-
-/* Thermometer container with colored ranges */
-.thermometer-container {
-  position: relative;
-  width: 60px;
-  height: 180px;
-  background: linear-gradient(
-    to top,
-    orange 0%,
-    orange 20%,   /* 0-10°C */
-    green 20%,
-    green 60%,    /* 10-30°C */
-    red 60%,
-    red 100%      /* 30-50°C */
-  );
-  border-radius: 30px;
-  border: 2px solid #999;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.15);
-  overflow: visible;
-  flex-shrink: 0;
-}
-
-/* Pointer arrow */
-.pointer-arrow {
-  position: absolute;
-  left: 100%; /* just outside right edge */
-  width: 0; 
-  height: 0; 
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-left: 15px solid #f44336;
-  transform: translateY(0);
-  transition: transform 0.5s ease;
-  pointer-events: none;
-  margin-left: 5px;
-}
-
-/* Celsius scale on left */
-.scale-celsius {
-  position: absolute;
-  left: -40px;
-  top: 0;
-  height: 180px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #333;
-  user-select: none;
-}
-
-/* Fahrenheit scale on right */
-.scale-fahrenheit {
-  position: absolute;
-  right: -45px;
-  top: 0;
-  height: 180px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #333;
-  user-select: none;
-}
-
-/* Label under thermometer */
-.thermo-label {
-  text-align: center;
-  margin-top: 6px;
-  font-weight: bold;
-  color: #333;
-  user-select: none;
-  font-size: 14px;
-}
-
-/* Humidity dial container */
-.humidity-container {
-  width: 140px;
-  height: 140px;
-  position: relative;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-/* Humidity dial label */
-.humidity-label {
-  position: absolute;
-  width: 100%;
-  text-align: center;
-  bottom: -30px;
-  font-weight: bold;
-  font-size: 14px;
-  color: #333;
-}
-
-/* Humidity value text inside dial */
-.humidity-value {
-  position: absolute;
-  width: 100%;
-  top: 60%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 22px;
-  font-weight: bold;
-  color: #2196f3;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-  .visuals-container {
-    flex-direction: column;
-    gap: 30px;
-  }
-
-  .thermometer-container,
-  .humidity-container {
-    margin: 0 auto; /* Center horizontally */
-  }
-
-  table {
-    min-width: unset;
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 400px) {
-  .data-row {
-    font-size: 14px;
-  }
-
-  .data-row button {
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-
-  #login-container {
-    margin: 50px 10px;
-    padding: 15px;
-  }
-
-  .humidity-container {
-    width: 120px;
-    height: 120px;
-  }
-
-  .humidity-value {
-    font-size: 18px;
-  }
-}
+/* FOOTER */
+footer{background:var(--primary);color:#fff;text-align:center;padding:20px}
 </style>
 </head>
-  <header style="display: flex; align-items: center; gap: 15px; padding: 10px 20px; background: #007bff; color: white;">
-    <img src="https://yt3.googleusercontent.com/ytc/AIdro_mLGSLQg3O6UAMTjsAEVT1h4wZqbFxWeYXsM4MQvTMvQnE=s900-c-k-c0x00ffffff-no-rj" alt="JEEP Logo" style="height: 50px;"/>
-    <h1 style="margin: 0;">Welcome to JEEP SolarDrier</h1>
-    <img src="https://codebitstechnologies.com/static/media/logo.241ddd6b.png" alt="CodeBits Technologies Logo" style="height: 40px; margin-left: auto;"/>
-  </header>
+
 <body>
 
-  <!-- 🔐 Login Form -->
-  <div id="login-container">
-    <h3>Login</h3>
-    <input type="text" id="username" placeholder="Username"><br />
-    <input type="password" id="password" placeholder="Password"><br />
-    <button onclick="login()">Login</button>
-    <div id="login-msg" style="color:red; margin-top:10px;"></div>
+<header>
+<nav>
+  <div class="logo">
+    <img src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7" alt="TechCare IT Logo">
+    <span>TechCare IT</span>
   </div>
 
-  <!-- 📊 Dashboard -->
-  <div id="dashboard" style="display:none;">
-    <h2>ESP32 Terature Dashboard</h2>
+  <div class="hamburger" onclick="toggleMenu()">☰</div>
 
-    <!-- Visuals container for thermometer and humidity -->
-    <div class="visuals-container">
-
-      <div style="position:relative;">
-        <div class="thermometer-container" id="thermometer">
-          <div class="pointer-arrow" id="tempPointer"></div>
-          <div class="scale-celsius">
-       
-
-         <div>122°F</div>
-            <div>104°F</div>
-            <div>86°F</div>
-            <div>68°F</div>
-            <div>50°F</div>
-            <div>32°F</div>
-          </div>
-          <div class="scale-fahrenheit">
-                 <div>50°C</div>
-            <div>40°C</div>
-            <div>30°C</div>
-            <div>20°C</div>
-            <div>10°C</div>
-            <div>0°C</div>
-
-   
-          </div>
-        </div>
-        <div class="thermo-label">Temperature</div>
-      </div>
-
-      <div class="humidity-container">
-        <svg id="humidityDial" width="140" height="140" viewBox="0 0 140 140">
-          <circle cx="70" cy="70" r="60" stroke="#2196f3" stroke-width="8" fill="none" opacity="0.3"/>
-          <circle cx="70" cy="70" r="60" stroke="#2196f3" stroke-width="8" fill="none"
-            stroke-linecap="round" 
-            stroke-dasharray="377"
-            stroke-dashoffset="377"/>
-          <line id="humidityNeedle" x1="70" y1="70" x2="70" y2="20" stroke="#2196f3" stroke-width="4" stroke-linecap="round" />
-          <text x="70" y="130" font-size="16" font-weight="bold" fill="#333" text-anchor="middle">Humidity</text>
-          <text id="humidityText" x="70" y="80" font-size="24" font-weight="bold" fill="#2196f3" text-anchor="middle">--%</text>
-        </svg>
-      </div>
-<!-- 🔋 Battery Indicator -->
-<div class="battery-container">
-  <style>
-    .battery-container {
-      text-align: center;
-      font-size: 14px;
-      color: #333;
-      user-select: none;
-    }
-
-    .battery {
-      position: relative;
-      width: 60px;
-      height: 25px;
-      border: 2px solid #333;
-      border-radius: 4px;
-      margin: 0 auto 5px;
-      box-sizing: border-box;
-    }
-
-    .battery-level {
-      height: 100%;
-      background-color: #4caf50; /* green by default */
-      border-radius: 2px 0 0 2px;
-      transition: width 0.3s ease;
-      width: 75%; /* dummy default */
-    }
-
-    .battery-cap {
-      position: absolute;
-      top: 6px;
-      right: -6px;
-      width: 4px;
-      height: 12px;
-      background: #333;
-      border-radius: 1px;
-    }
-
-    .battery-label {
-      font-weight: bold;
-      margin-top: 3px;
-    }
-  </style>
-
-  <div class="battery">
-    <div class="battery-level" id="batteryBar"></div>
-    <div class="battery-cap"></div>
+  <div class="menu" id="menu">
+    <a href="#home">Home</a>
+    <a href="#services">Services</a>
+    <a href="#embedded">Embedded</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact">Contact</a>
+    <a href="#" onclick="toggleDark()">🌙</a>
   </div>
-  <div class="battery-label" id="batteryLabel">Battery: 75%</div>
+</nav>
+</header>
 
-  <script>
-    function setBatteryLevel(percent) {
-      const level = Math.max(0, Math.min(percent, 100)); // Clamp between 0–100
-      const bar = document.getElementById("batteryBar");
-      const label = document.getElementById("batteryLabel");
+<section class="hero" id="home">
+<img src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7" alt="Logo">
+<h2>IT Maintenance & Embedded Systems Experts</h2>
+<p>Professional IT support, GPS vehicle tracking, and surveillance camera solutions.</p>
+<a href="#contact" class="btn">Request a Quote</a>
+</section>
 
-      bar.style.width = level + "%";
-      label.textContent = "Battery: " + level + "%";
 
-      // Change color based on level
-      if (level < 20) bar.style.backgroundColor = "#f44336";      // red
-      else if (level < 50) bar.style.backgroundColor = "#ff9800"; // orange
-      else bar.style.backgroundColor = "#4caf50";                  // green
-    }
+<section id="about">
+  <h2>About TechCare IT</h2>
 
-    // Dummy value: set to 75% initially
-    setBatteryLevel(75);
-  </script>
+  <div class="grid">
+    <div class="card">
+      <h3>Who We Are</h3>
+      <p>
+        TechCare IT Solutions is a technology services company providing
+        professional IT maintenance, embedded systems, and smart security
+        solutions for businesses and individuals.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>What We Do</h3>
+      <p>
+        We deliver reliable PC and network support, organizational IT services,
+        GPS vehicle tracking, surveillance camera systems, and custom embedded
+        and IoT solutions.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Why Choose Us</h3>
+      <p>
+        Our clients trust us for fast response, technical expertise, secure
+        systems, and practical solutions tailored to real operational needs.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="services">
+<h2>Our Services</h2>
+<div class="grid">
+  <div class="card">
+    <h3>PC & Network Maintenance</h3>
+    <p>Preventive maintenance, troubleshooting, OS installation, upgrades, and secure networking.</p>
+  </div>
+  <div class="card">
+    <h3>Organizational IT Support</h3>
+    <p>Reliable on-site and remote IT services for offices and institutions.</p>
+  </div>
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04">
+    <h3>Embedded Systems Support</h3>
+    <p>
+      Design, installation, and maintenance of embedded systems including
+      GPS tracking units, surveillance cameras, IoT devices, and custom controllers.
+    </p>
+  </div>
 </div>
+</section>
 
+
+<section id="team">
+  <h2>Meet Our Team</h2>
+
+  <div class="grid">
+    <div class="card">
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Team Member">
+      <h3>Daniel Okoro</h3>
+      <p><strong>Lead IT Engineer</strong></p>
+      <p>
+        Oversees IT infrastructure, system maintenance, and enterprise
+        technical support for clients.
+      </p>
     </div>
 
-    <div class="data-row"><strong>Motor 1:</strong> <span id="relay1">—</span>
-      <button id="btnM1On" onclick="setRelay(3, 1)">ON</button>
-      <button id="btnM1Off" onclick="setRelay(3, 0)">OFF</button>
+    <div class="card">
+      <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Team Member">
+      <h3>Aisha Bello</h3>
+      <p><strong>Network & Security Specialist</strong></p>
+      <p>
+        Responsible for network design, security implementation,
+        surveillance systems, and access control solutions.
+      </p>
     </div>
 
-    <div class="data-row"><strong>Motor 2:</strong> <span id="relay2">—</span>
-      <button id="btnM2On" onclick="setRelay(4, 1)">ON</button>
-      <button id="btnM2Off" onclick="setRelay(4, 0)">OFF</button>
+    <div class="card">
+      <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Team Member">
+      <h3>Michael Chen</h3>
+      <p><strong>Embedded Systems Engineer</strong></p>
+      <p>
+        Designs and maintains embedded systems including GPS tracking,
+        IoT devices, and custom hardware controllers.
+      </p>
     </div>
 
-    <div class="data-row" id="lastUpdate">Last update: —</div>
-    <div id="status"></div>
-
-    <div id="chart"></div>
-
-    <h3>Data Table</h3>
-    <label for="timeframe">Show data from:</label>
-    <select id="timeframe">
-      <option value="10m">Last 10 Minutes</option>
-      <option value="1h">Last 1 Hour</option>
-      <option value="6h">Last 6 Hours</option>
-      <option value="1d">Last 1 Day</option>
-    </select>
-    <button onclick="loadTableData()">Load Data</button>
-    <button onclick="exportCSV()">Export CSV</button>
-
-    <div class="table-container">
-      <table id="data-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Temperature (°C)</th>
-            <th>Humidity (%)</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <div class="card">
+      <img src="https://randomuser.me/api/portraits/women/29.jpg" alt="Team Member">
+      <h3>Sophia Martinez</h3>
+      <p><strong>Technical Support Coordinator</strong></p>
+      <p>
+        Manages client support requests, service scheduling, and ensures
+        fast response and customer satisfaction.
+      </p>
     </div>
   </div>
+</section>
 
-  <!-- 🔌 JavaScript Logic -->
-  <script>
-    const channelID = "3082785";
-    const readAPI = "JRBASV8AOT1TXBJZ";
-    const writeAPI = "CBZLR0Q1V6JUA2HS";
-    let isCooldown = false;
-    let lastFilteredData = [];
+<section id="certifications">
+  <h2>Certifications & Technology Partners</h2>
 
-    function login() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      const msg = document.getElementById('login-msg');
+  <div class="grid">
+    <div class="card" style="text-align:center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft" style="height:60px;object-fit:contain">
+      <p>Microsoft Technology Partner</p>
+    </div>
 
-      if (user === "admin" && pass === "jeep1") {
-        document.getElementById('login-container').style.display = "none";
-        document.getElementById('dashboard').style.display = "block";
-        fetchLatest();
-        plotGraph();
-        setInterval(() => {
-          fetchLatest();
-          plotGraph();
-        }, 30000);
-      } else {
-        msg.textContent = "Invalid username or password!";
-      }
-    }
+    <div class="card" style="text-align:center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/Cisco_logo_blue_2016.svg" alt="Cisco" style="height:60px;object-fit:contain">
+      <p>Cisco Networking Solutions</p>
+    </div>
 
-    function showMessage(message, type = "success") {
-      const statusDiv = document.getElementById("status");
-      statusDiv.textContent = message;
-      statusDiv.className = type;
-      statusDiv.style.display = "block";
-      setTimeout(() => {
-        statusDiv.style.display = "none";
-      }, 4000);
-    }
+    <div class="card" style="text-align:center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" style="height:60px;object-fit:contain">
+      <p>Google Cloud & IoT Ecosystem</p>
+    </div>
 
-    function setButtonsDisabled(disabled) {
-      document.getElementById("btnM1On").disabled = disabled;
-      document.getElementById("btnM1Off").disabled = disabled;
-      document.getElementById("btnM2On").disabled = disabled;
-      document.getElementById("btnM2Off").disabled = disabled;
-    }
+    <div class="card" style="text-align:center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Hikvision_logo.svg" alt="Hikvision" style="height:60px;object-fit:contain">
+      <p>Surveillance & Security Systems</p>
+    </div>
+  </div>
+</section>
 
-    async function setRelay(fieldNum, value) {
-      if (isCooldown) {
-        showMessage("Please wait before switching again.", "error");
-        return;
-      }
 
-      isCooldown = true;
-      setButtonsDisabled(true);
+<section id="embedded">
+<h2>Embedded System Solutions</h2>
+<div class="grid">
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1603791440384-56cd371ee9a7">
+    <h3>GPS Vehicle Tracking</h3>
+    <p>
+      Real-time vehicle location, route history, speed monitoring, and theft prevention
+      for fleets and private vehicles.
+    </p>
+  </div>
 
-      try {
-        const resLatest = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds/last.json?api_key=${readAPI}`);
-        if (!resLatest.ok) throw new Error(`Failed to fetch latest data: ${resLatest.status}`);
-        const latestData = await resLatest.json();
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1581092919531-7c9c1a1a1b8a">
+    <h3>Surveillance Camera Systems</h3>
+    <p>
+      High-definition CCTV and IP camera systems with remote access, recording,
+      and professional installation for businesses and homes.
+    </p>
+  </div>
+</div>
+</section>
 
-        const fields = {
-          field1: latestData.field1 || '',
-          field2: latestData.field2 || '',
-          field3: latestData.field3 || '0',
-          field4: latestData.field4 || '0',
-        };
+<section id="pricing">
+<h2>Service Plans</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Basic</h3>
+    <p class="price">$99 / month</p>
+    <p>PC maintenance<br>Software updates<br>Email support</p>
+  </div>
+  <div class="card">
+    <h3>Business</h3>
+    <p class="price">$249 / month</p>
+    <p>Full IT support<br>Network management<br>Priority response</p>
+  </div>
+  <div class="card">
+    <h3>Enterprise</h3>
+    <p class="price">Custom</p>
+    <p>Embedded systems<br>Dedicated engineer<br>24/7 monitoring</p>
+  </div>
+</div>
+</section>
 
-        fields[`field${fieldNum}`] = value.toString();
+<section id="contact">
+<h2>Contact Us</h2>
+<p style="text-align:center">Contact us via WhatsApp or Email for fast response.</p>
+</section>
 
-        const updateUrl = `https://api.thingspeak.com/update?api_key=${writeAPI}` +
-          `&field1=${encodeURIComponent(fields.field1)}` +
-          `&field2=${encodeURIComponent(fields.field2)}` +
-          `&field3=${encodeURIComponent(fields.field3)}` +
-          `&field4=${encodeURIComponent(fields.field4)}`;
+<footer>
+<p>© 2026 TechCare IT Solutions | GitHub Pages Ready</p>
+</footer>
 
-        const resUpdate = await fetch(updateUrl);
-        const text = await resUpdate.text();
-        if (text === '0') {
-          showMessage("ThingSpeak update rejected (rate limit or invalid data)", "error");
-        } else {
-          showMessage(`Motor ${fieldNum - 2} switched ${value === 1 ? "ON" : "OFF"}`, "success");
-          setTimeout(fetchLatest, 2000);
-        }
-      } catch (e) {
-        console.error("Error setting relay:", e);
-        showMessage("Network or API error switching relay: " + e.message, "error");
-      }
+<a class="float whatsapp" href="https://wa.me/1234567890" target="_blank">WhatsApp</a>
+<a class="float email" href="mailto:info@techcareit.com">Email</a>
 
-      setTimeout(() => {
-        isCooldown = false;
-        setButtonsDisabled(false);
-      }, 15000);
-    }
+<script>
+function toggleMenu(){
+  const m=document.getElementById("menu");
+  m.style.display=m.style.display==="flex"?"none":"flex";
+}
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+const cards=document.querySelectorAll(".card");
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>e.isIntersecting&&e.target.classList.add("show"));
+},{threshold:0.2});
+cards.forEach(c=>observer.observe(c));
+</script>
 
-    async function fetchLatest() {
-      try {
-        const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds/last.json?api_key=${readAPI}`);
-        const data = await res.json();
-
-        const temp = parseFloat(data.field1);
-        const hum = parseFloat(data.field2);
-        const relay1 = data.field3;
-        const relay2 = data.field4;
-
-        document.getElementById("relay1").textContent = relay1 === "1" ? "ON" : "OFF";
-        document.getElementById("relay2").textContent = relay2 === "1" ? "ON" : "OFF";
-
-        // Update thermometer
-        updateThermometer(temp);
-
-        // Update humidity dial
-        updateHumidityDial(hum);
-
-        // Update text values
-        document.getElementById("temp").textContent = isNaN(temp) ? "—" : temp.toFixed(1) + " °C";
-        document.getElementById("hum").textContent = isNaN(hum) ? "—" : hum.toFixed(1) + " %";
-
-        const lastUpdateTime = new Date(data.created_at);
-        const now = new Date();
-        const minutesAgo = Math.floor((now - lastUpdateTime) / 60000);
-        document.getElementById("lastUpdate").textContent = `Last update: ${minutesAgo} min ago`;
-      } catch (e) {
-        console.error("Error fetching data:", e);
-        showMessage("....", "error");
-      }
-    }
-
-    function updateThermometer(tempC) {
-      const pointer = document.getElementById("tempPointer");
-      if (isNaN(tempC)) {
-        pointer.style.transform = "translateY(180px)";
-        return;
-      }
-      // Clamp temperature between 0 and 50
-      const clampedTemp = Math.min(Math.max(tempC, 0), 50);
-      // Map 0°C (bottom) to 50°C (top), thermometer height = 180px
-      // pointer's top position should move from 160px (bottom) to 0px (top)
-      // We translate the arrow vertically by pointerY:
-      const pointerY = 180 - (clampedTemp / 50) * 180 - 10; // subtract half arrow height to center it
-
-      pointer.style.transform = `translateY(${pointerY}px)`;
-    }
-
-    function updateHumidityDial(hum) {
-      const dial = document.getElementById("humidityDial");
-      const needle = document.getElementById("humidityNeedle");
-      const text = document.getElementById("humidityText");
-
-      if (isNaN(hum) || hum < 0 || hum > 100) {
-        text.textContent = "--%";
-        needle.setAttribute("transform", "");
-        return;
-      }
-
-      // Humidity dial arc circumference ~ 2 * PI * 60 = 377
-      // Dash offset 377 means empty, 0 means full circle
-      const dashOffset = 377 - (377 * hum) / 100;
-      dial.querySelectorAll("circle")[1].style.strokeDashoffset = dashOffset;
-
-      // Rotate needle from -90deg (0%) to 90deg (100%)
-      const angle = (hum / 100) * 180 - 90;
-      needle.setAttribute("transform", `rotate(${angle} 70 70)`);
-
-      text.textContent = `${hum.toFixed(1)}%`;
-    }
-
-    async function plotGraph() {
-      try {
-        const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPI}&results=800`);
-        const json = await res.json();
-
-        const feeds = json.feeds || [];
-        if (feeds.length === 0) {
-          showMessage("No data to plot", "error");
-          return;
-        }
-
-        const times = feeds.map(f => new Date(f.created_at));
-        const temps = feeds.map(f => parseFloat(f.field1));
-        const hums = feeds.map(f => parseFloat(f.field2));
-
-        const traceTemp = {
-          x: times,
-          y: temps,
-          mode: "lines+markers",
-          name: "Temperature (°C)",
-          line: { color: "#f44336" },
-          yaxis: "y1"
-        };
-
-        const traceHum = {
-          x: times,
-          y: hums,
-          mode: "lines+markers",
-          name: "Humidity (%)",
-          line: { color: "#2196f3" },
-          yaxis: "y2"
-        };
-
-        const layout = {
-          title: "Temperature and Humidity Over Time",
-          xaxis: { title: "Time" },
-          yaxis: { title: "Temperature (°C)", side: "left", range: [0, 50] },
-          yaxis2: {
-            title: "Humidity (%)",
-            side: "right",
-            overlaying: "y",
-            range: [0, 100]
-          },
-          legend: { orientation: "h" },
-          margin: { t: 40, r: 60 }
-        };
-
-        Plotly.newPlot("chart", [traceTemp, traceHum], layout, {responsive: true});
-      } catch (e) {
-        console.error("Plotting error:", e);
-        showMessage("Failed to load graph data", "error");
-      }
-    }
-
-    async function loadTableData() {
-      const timeframe = document.getElementById("timeframe").value;
-      let durationMs = 10 * 60 * 1000; // default 10 minutes
-      if (timeframe === "1h") durationMs = 60 * 60 * 1000;
-      else if (timeframe === "6h") durationMs = 6 * 60 * 60 * 1000;
-      else if (timeframe === "1d") durationMs = 24 * 60 * 60 * 1000;
-
-      try {
-        const res = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPI}&results=800`);
-        const json = await res.json();
-        const feeds = json.feeds || [];
-
-        const now = new Date();
-        lastFilteredData = feeds.filter(f => now - new Date(f.created_at) <= durationMs);
-
-        const tbody = document.querySelector("#data-table tbody");
-        tbody.innerHTML = "";
-        lastFilteredData.forEach(f => {
-          const tr = document.createElement("tr");
-          const time = new Date(f.created_at);
-          tr.innerHTML = `
-            <td>${time.toLocaleString()}</td>
-            <td>${parseFloat(f.field1).toFixed(1)}</td>
-            <td>${parseFloat(f.field2).toFixed(1)}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        showMessage("Failed to load table data", "error");
-      }
-    }
-
-    function exportCSV() {
-      if (!lastFilteredData.length) {
-        showMessage("No data to export", "error");
-        return;
-      }
-      let csv = "Time,Temperature (°C),Humidity (%)\n";
-      lastFilteredData.forEach(f => {
-        const time = new Date(f.created_at).toLocaleString();
-        const temp = parseFloat(f.field1).toFixed(1);
-        const hum = parseFloat(f.field2).toFixed(1);
-        csv += `${time},${temp},${hum}\n`;
-      });
-      const blob = new Blob([csv], {type: "text/csv"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "sensor_data.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  </script>
 </body>
 </html>
