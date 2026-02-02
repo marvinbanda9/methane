@@ -300,12 +300,36 @@ footer{background:var(--primary);color:#fff;text-align:center;padding:20px}
 </section>
 
 <section id="contact">
-<h2>Contact Us</h2>
-<p style="text-align:center">Contact us via WhatsApp or Email for fast response.</p>
+  <h2>Contact Us</h2>
+
+  <p style="text-align:center">
+    Contact us via WhatsApp or Email for fast response.
+  </p>
+
+  <div style="text-align:center;margin-top:25px">
+    <p><strong>📍 Office Location</strong></p>
+    <p>
+      Kyebando Ring Road, Kyebando<br>
+      Kampala, Uganda
+    </p>
+  </div>
+
+  <div style="margin-top:25px">
+    <iframe
+      src="https://www.google.com/maps?q=Kyebando+Ring+Road,+Kampala&output=embed"
+      width="100%"
+      height="300"
+      style="border:0;border-radius:10px"
+      allowfullscreen=""
+      loading="lazy">
+    </iframe>
+  </div>
 </section>
 
 <footer>
-<p>© 2026 TechCare IT Solutions | GitHub Pages Ready</p>
+  <p>
+    © 2026 TechCare IT Solutions | Kyebando, Kampala – Uganda | GitHub Pages Ready
+  </p>
 </footer>
 
 <a class="float whatsapp" href="https://wa.me/1234567890" target="_blank">WhatsApp</a>
@@ -313,17 +337,24 @@ footer{background:var(--primary);color:#fff;text-align:center;padding:20px}
 
 <script>
 function toggleMenu(){
-  const m=document.getElementById("menu");
-  m.style.display=m.style.display==="flex"?"none":"flex";
+  const m = document.getElementById("menu");
+  m.style.display = m.style.display === "flex" ? "none" : "flex";
 }
+
 function toggleDark(){
   document.body.classList.toggle("dark");
 }
-const cards=document.querySelectorAll(".card");
-const observer=new IntersectionObserver(entries=>{
-  entries.forEach(e=>e.isIntersecting&&e.target.classList.add("show"));
-},{threshold:0.2});
-cards.forEach(c=>observer.observe(c));
+
+const cards = document.querySelectorAll(".card");
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add("show");
+    }
+  });
+}, { threshold: 0.2 });
+
+cards.forEach(c => observer.observe(c));
 </script>
 
 </body>
